@@ -1,0 +1,4 @@
+Endpoint,EnableSMB1Protocol,EnableSMB2Protocol,EnableSMB3Protocol
+Endpoint-1.domain.com,True,False,True
+Endpoint-2.domain.com,False,True,False
+Endpoint-3.domain.com,False,False,True
