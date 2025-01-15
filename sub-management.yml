@@ -1,0 +1,14 @@
+# File: smb-management.yml
+- name: Manage SMB protocols
+  hosts: windows
+  tasks:
+    - name: Check SMBv1 status
+      win_shell: Get-SmbServerConfiguration | Select EnableSMB1Protocol
+      register: smb_status
+
+    - name: Disable SMBv1
+      win_shell: Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart
+      when: smb_status.stdout.find("True") != -1
+
+    - name: Enable SMBv2/3
+      win_shell: Set-SmbServerConfiguration -EnableSMB2Protocol $true -EnableSMB3Protocol $true -Force
