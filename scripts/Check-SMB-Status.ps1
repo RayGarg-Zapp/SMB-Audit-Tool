@@ -1,7 +1,7 @@
 # File: Check-SMB-Status.ps1
 Param(
-    [string]$EndpointFile = "endpoints.txt", # File containing list of endpoints
-    [string]$OutputFile = "SMBStatusLogs.csv" # Output CSV file
+    [string]$EndpointFile = "data/endpoints.txt", # File containing list of endpoints
+    [string]$OutputFile = "data/SMBStatusLogs.csv" # Output CSV file
 )
 
 # Ensure required modules are imported
@@ -20,8 +20,16 @@ foreach ($endpoint in $endpoints) {
             Get-SmbServerConfiguration | Select-Object EnableSMB1Protocol, EnableSMB2Protocol, EnableSMB3Protocol
         }
 
+        $destinationIP = Resolve-DnsName -Name $endpoint -ErrorAction SilentlyContinue | Select-Object -ExpandProperty IPAddress
+        $hostname = $env:COMPUTERNAME  # Assuming local execution; adjust as needed
+        $sourceIP = Test-Connection -ComputerName $endpoint -Count 1 | Select-Object -ExpandProperty IPV4Address
+
         $results += [PSCustomObject]@{
             Endpoint          = $endpoint
+            SourceIP          = $sourceIP
+            DestinationIP     = $destinationIP
+            Hostname          = $hostname
+            ServicePort       = 445  # Default SMB port
             EnableSMB1Protocol = $smbConfig.EnableSMB1Protocol
             EnableSMB2Protocol = $smbConfig.EnableSMB2Protocol
             EnableSMB3Protocol = $smbConfig.EnableSMB3Protocol
@@ -30,10 +38,15 @@ foreach ($endpoint in $endpoints) {
         Write-Warning "Failed to connect to $endpoint: $_"
         $results += [PSCustomObject]@{
             Endpoint          = $endpoint
+            SourceIP          = "Error"
+            DestinationIP     = "Error"
+            Hostname          = "Error"
+            ServicePort       = "Error"
             EnableSMB1Protocol = "Error"
             EnableSMB2Protocol = "Error"
             EnableSMB3Protocol = "Error"
         }
+        Add-Content -Path "data/ErrorLog.txt" -Value "Failed to connect to $endpoint: $_"
     }
 }
 
